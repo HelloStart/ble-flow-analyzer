@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="250" viewBox="0 0 920 250">
+  <rect width="920" height="250" fill="#ffffff"/>
+  <text x="20" y="30" font-family="Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#173f3b">SCAN_REQ packet structure</text>
+  <g font-family="Segoe UI, sans-serif" font-size="15" fill="#17232b" stroke="#52636a" stroke-width="1.5">
+    <rect x="20" y="50" width="120" height="52" fill="#f4d65e"/>
+    <rect x="140" y="50" width="180" height="52" fill="#efbc3c"/>
+    <rect x="320" y="50" width="460" height="52" fill="#63c4dd"/>
+    <rect x="780" y="50" width="120" height="52" fill="#b9d58e"/>
+    <text x="36" y="73" stroke="none">Preamble</text><text x="36" y="93" stroke="none">1 byte</text>
+    <text x="158" y="73" stroke="none">Access Address</text><text x="158" y="93" stroke="none">4 bytes</text>
+    <text x="338" y="82" stroke="none">Advertising Channel PDU</text>
+    <text x="798" y="73" stroke="none">CRC</text><text x="798" y="93" stroke="none">3 bytes</text>
+    <rect x="150" y="142" width="170" height="60" fill="#7acbe0"/>
+    <rect x="320" y="142" width="280" height="60" fill="#d8e9e4" stroke="#176f65" stroke-width="2"/>
+    <rect x="600" y="142" width="280" height="60" fill="#a9c6df" stroke="#176f65" stroke-width="2"/>
+    <text x="170" y="169" stroke="none">LL Header</text><text x="170" y="190" stroke="none">2 bytes</text>
+    <text x="340" y="169" stroke="none" font-weight="600">ScanA</text><text x="340" y="190" stroke="none">Scanner address · 6 bytes</text>
+    <text x="620" y="169" stroke="none" font-weight="600">AdvA</text><text x="620" y="190" stroke="none">Advertiser address · 6 bytes</text>
+    <path d="M 470 102 L 470 126 L 235 126 L 235 142 M 470 126 L 740 126 L 740 142" fill="none"/>
+  </g>
+  <text x="320" y="232" font-family="Segoe UI, sans-serif" font-size="14" fill="#52636a">Payload is fixed: ScanA + AdvA. No Advertising Data is carried.</text>
+</svg>

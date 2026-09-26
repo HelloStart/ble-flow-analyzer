@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="470" viewBox="0 0 980 470">
+  <rect width="980" height="470" fill="#fff"/>
+  <g font-family="Segoe UI, sans-serif" fill="#17232b" stroke="#52636a" stroke-width="1.2">
+    <text x="18" y="28" stroke="none" font-size="18" font-weight="600" fill="#173f3b">GATT service discovery · theoretical frame decomposition</text>
+    <rect x="18" y="52" width="130" height="48" fill="#f4d65e"/><rect x="148" y="52" width="190" height="48" fill="#a9c6df"/><rect x="338" y="52" width="520" height="48" fill="#63c4dd"/><rect x="858" y="52" width="104" height="48" fill="#b9d58e"/>
+    <text x="35" y="73" stroke="none">Preamble</text><text x="35" y="91" stroke="none">PHY dependent</text><text x="168" y="73" stroke="none">Connection Access Address</text><text x="168" y="91" stroke="none">4 bytes</text><text x="370" y="81" stroke="none">Data Physical Channel PDU</text><text x="875" y="73" stroke="none">CRC</text><text x="875" y="91" stroke="none">3 bytes</text>
+    <path d="M598 100v22H185v18m413-18h255v18" fill="none"/>
+    <rect x="78" y="140" width="230" height="58" fill="#7acbe0"/><rect x="308" y="140" width="572" height="58" fill="#d8e9e4" stroke="#176f65" stroke-width="2"/>
+    <text x="98" y="166" stroke="none" font-weight="600">LL Data Header</text><text x="98" y="187" stroke="none">LLID = 10 · Length</text><text x="328" y="166" stroke="none" font-weight="600">LL Data PDU Payload = L2CAP Basic Frame</text><text x="328" y="187" stroke="none">Length · CID = 0x0004（ATT）· ATT payload</text>
+    <path d="M594 198v20H190v18m404-18h285v18" fill="none"/>
+    <rect x="80" y="236" width="220" height="58" fill="#a9c6df"/><rect x="300" y="236" width="580" height="58" fill="#edf4f2" stroke="#176f65" stroke-width="2"/>
+    <text x="100" y="262" stroke="none" font-weight="600">L2CAP Basic Frame</text><text x="100" y="283" stroke="none">Length · CID 0x0004</text><text x="320" y="262" stroke="none" font-weight="600">ATT PDU</text><text x="320" y="283" stroke="none">Opcode · Attribute parameters</text>
+    <rect x="45" y="335" width="285" height="78" fill="#f8f4e8" stroke="#9a6a08"/><rect x="347" y="335" width="285" height="78" fill="#edf4f2" stroke="#176f65"/><rect x="650" y="335" width="285" height="78" fill="#e8eef4" stroke="#4f7980"/>
+    <text x="62" y="362" stroke="none" font-weight="600">Primary Service discovery</text><text x="62" y="385" stroke="none">0x10 Request → 0x11 Response</text><text x="62" y="404" stroke="none">Group Type = 0x2800</text>
+    <text x="364" y="362" stroke="none" font-weight="600">Characteristic discovery</text><text x="364" y="385" stroke="none">0x08 Request → 0x09 Response</text><text x="364" y="404" stroke="none">Type = 0x2803</text>
+    <text x="667" y="362" stroke="none" font-weight="600">Descriptor discovery</text><text x="667" y="385" stroke="none">0x04 Request → 0x05 Response</text><text x="667" y="404" stroke="none">within characteristic handle range</text>
+    <text x="18" y="448" stroke="none" font-size="13" fill="#52636a">Services: 13 and Characteristics: 52 are aggregated results from multiple ATT exchanges, not fields of one response frame.</text>
+  </g>
+</svg>

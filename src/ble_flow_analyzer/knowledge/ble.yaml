@@ -1,0 +1,400 @@
+events:
+  SCAN_STARTED:
+    description: 应用请求操作系统开始主动扫描，等待附近设备发送广播。
+    overview: 为了发现周围蓝牙设备，应用可以被动监听广播，也可以使用主动扫描进一步请求可扫描设备的补充信息。
+  SCAN_STOPPED:
+    description: 扫描已停止，已发现的设备和事件仍保留在当前会话中。
+  ADVERTISEMENT_UPDATE:
+    description: 这是跨平台 Bleak 回退扫描产生的聚合更新。仅在平台无法提供广播类型时使用，不代表确定的空口 PDU。
+    image: images/adv_ind.svg
+    structure_note: |-
+      图片用于说明 Advertising Data 在广播空口结构中的位置。
+      Bleak 公共 API 不提供 PDU Type，因此本事件不能确定为 ADV_IND、ADV_SCAN_IND、SCAN_RSP 或扩展广播 PDU。
+    data_title: 本次重组的 Advertising Data
+    data_note: 字段值来自 Bleak/API；Length 和 AD Type 由工具按规范重组，未提供的 Flags 不会补造，字段顺序不代表实际空口顺序。
+  ADV_IND:
+    description: ADV_IND 是可连接、可扫描的非定向广播。设备可在其中携带名称、服务 UUID 等 AD Structure。
+    overview: |-
+      ADV_IND 用于让周围扫描器发现设备，并允许中心设备随后发起连接。设备会在主广播信道周期发送该广播；主动扫描器收到后，可以发送 SCAN_REQ 请求更多信息，设备再通过 SCAN_RSP 返回补充数据。
+
+      工程中通常先通过 ADV_IND 判断设备是否可连接，再结合 AdvData 中的名称、Service UUID 和厂商数据筛选目标设备。广播间隔、发射功率和周围环境会共同影响发现速度与 RSSI。
+    flow_image: images/active_scan_flow.svg
+    image: images/adv_ind.svg
+    header_image: images/advertising_header.svg
+    header_note: |-
+      Advertising Channel PDU Header 共 16 bits。
+      PDU Type 4个bits,定义参考下面，ADV_IND 为 0000；
+      TxAdd 表示 AdvA 使用 public address 还是 random address；
+      RxAdd 对 ADV_IND 保留；
+      Length 表示 Payload（AdvA + AdvData）的字节数。
+      RFU 位应保持为 0。
+    structure_note: |-
+      ADV_IND 的名称来自 Advertising Channel PDU Header：PDU Type = 0b0000。
+      PDU Type 位于 LL Header，不属于 AdvData。真实 Windows 模式依据 WinRT AdvertisementType = ConnectableUndirected 将事件分类为 ADV_IND，但不提供完整 LL Header 字节。
+
+      Advertising Channel PDU Type：
+      0000  ADV_IND
+      0001  ADV_DIRECT_IND
+      0010  ADV_NONCONN_IND
+      0011  SCAN_REQ / AUX_SCAN_REQ
+      0100  SCAN_RSP
+      0101  CONNECT_IND / AUX_CONNECT_REQ（CONNECT_IND 旧称 CONNECT_REQ）
+      0110  ADV_SCAN_IND
+      0111  扩展广播 PDU（ADV_EXT_IND、AUX_ADV_IND、AUX_SCAN_RSP 等，名称取决于上下文）
+      1000  AUX_CONNECT_RSP
+      1001-1111  Reserved
+    data_title: 本次 Advertising Data（AdvData）
+    data_note: 真实模式的 AD Type、AD Data 和顺序来自 WinRT DataSections，Length 由工具补回；不包含 LL Header、AdvA 和 CRC。
+  ADV_DIRECT_IND:
+    description: ADV_DIRECT_IND 是面向指定目标地址的可连接定向广播，主要用于快速建立连接，通常不携带一般 Advertising Data。
+    image: images/adv_ind.svg
+    structure_note: WinRT AdvertisementType = ConnectableDirected，对应 Legacy Advertising PDU Type = 0b0001。WinRT 报告类型，但不提供完整 LL Header 字节。
+    data_title: 本次 WinRT DataSections
+    data_note: 定向广播通常没有可解析的通用 AdvData；若 Windows 提供 DataSections，工具按报告内容展示。
+  ADV_NONCONN_IND:
+    description: ADV_NONCONN_IND 是不可连接、不可扫描的非定向广播，常用于 Beacon 或只广播数据的设备。
+    image: images/adv_ind.svg
+    structure_note: WinRT AdvertisementType = NonConnectableUndirected，对应 Legacy Advertising PDU Type = 0b0010。
+    data_title: 本次 Advertising Data（AdvData）
+    data_note: AD Type、AD Data 和顺序来自 WinRT DataSections，Length 由工具补回。
+  ADV_SCAN_IND:
+    description: ADV_SCAN_IND 是不可连接但可扫描的非定向广播。主动扫描器可以请求 SCAN_RSP 获取补充数据。
+    image: images/adv_ind.svg
+    structure_note: WinRT AdvertisementType = ScannableUndirected，对应 Legacy Advertising PDU Type = 0b0110。
+    data_title: 本次 Advertising Data（AdvData）
+    data_note: AD Type、AD Data 和顺序来自 WinRT DataSections，Length 由工具补回。
+  SCAN_REQ:
+    description: SCAN_REQ 是扫描器为获取补充广播数据而发送的请求。该节点可能是协议推断，不一定是实际捕获。
+    overview: |-
+      主动扫描器收到 ADV_IND 或 ADV_SCAN_IND 后，可以向广播设备发送 SCAN_REQ，请求其返回额外的扫描响应数据。广播设备若接受该请求，会在规定的帧间间隔后发送 SCAN_RSP。
+
+      SCAN_REQ 由蓝牙控制器自动生成，应用通常只负责开启主动扫描。Windows WinRT watcher 不会把控制器发出的 SCAN_REQ 作为接收事件交给应用，因此工具根据后续观察到的 SCAN_RSP 将该步骤标记为协议推断。
+    flow_image: images/active_scan_flow.svg
+    image: images/scan_req.svg
+    header_image: images/scan_req_header.svg
+    header_note: |-
+      SCAN_REQ 的 Advertising Channel PDU Header 共 16 bits。
+      PDU Type 占4个bits，0011表示SCAN_REQ；
+      TxAdd 指示 ScanA 的地址类型；
+      RxAdd 指示 AdvA 的地址类型；
+      Length 固定为 12，表示 Payload 由 6-byte ScanA 和 6-byte AdvA 组成。
+      RFU 位应为 0。
+    structure_note: |-
+      SCAN_REQ Payload 不包含 Advertising Data，也不使用 AD Structure。
+      ScanA 是扫描器地址，AdvA 是目标广播设备地址。扫描器只应向刚刚收到的可扫描广播所携带的 AdvA 发送请求。
+    data_title: 本次 SCAN_REQ 发送数据
+    data_note: Windows 由控制器自动发送 SCAN_REQ，但 WinRT watcher 不提供该发送 PDU 的 Header、ScanA 或 AdvA 原始字节，因此本事件只展示协议规定格式，不伪造发送 HEX，也不进行数据解析。
+  SCAN_RSP:
+    description: SCAN_RSP 是独立的链路层 PDU，用于响应 SCAN_REQ，常携带完整名称等补充信息。
+    overview: 主动扫描器发送 SCAN_REQ 后，可扫描设备通过 SCAN_RSP 返回额外的 Advertising Data。它常用于放置完整设备名或广播包中容纳不下的数据。
+    flow_image: images/active_scan_flow.svg
+    image: images/adv_ind.svg
+    header_image: images/advertising_header.svg
+    header_note: SCAN_RSP 的 Advertising Channel PDU Type 为 0100。Header 的 Length 表示 Payload 中 AdvA 与 ScanRspData 的总长度。
+    structure_note: WinRT AdvertisementType = ScanResponse，对应 Legacy Advertising PDU Type = 0b0100。SCAN_REQ 由控制器管理，Windows watcher 通常不会把它作为接收事件交给应用。
+    data_title: 本次 Scan Response Data
+    data_note: AD Type、AD Data 和顺序来自 WinRT DataSections，Length 由工具补回。
+  EXTENDED_ADVERTISEMENT:
+    description: 这是 WinRT 报告的扩展广播事件。它可能对应 ADV_EXT_IND、AUX_ADV_IND、AUX_SCAN_RSP 等，单凭 AdvertisementType = Extended 不能继续细分具体空口 PDU 名称。
+    image: images/adv_ind.svg
+    structure_note: 扩展广播使用 PDU Type = 0b0111，并通过扩展头字段和主/次广播信道上下文区分具体用途；WinRT 在此只报告 Extended 类别及属性。
+    data_title: 本次扩展广播数据
+    data_note: DataSections 来自 WinRT；数据可能由多个链路层片段在系统中组合后提供，不展示空口分片过程。
+  DEVICE_SELECTED:
+    description: 用户从扫描结果中选择了一个目标设备，扫描历史不会因此丢失。
+  CONNECTION_STARTED:
+    description: 应用通过 Bleak 请求 Windows 与所选外设建立连接；底层可能使用 CONNECT_IND，也可能使用 AUX_CONNECT_REQ。
+    overview: |-
+      中心设备选择一个可连接广播设备后，先停止扫描，再请求 Windows 建立 BLE 连接。若连接来自 Legacy ADV_IND 或 ADV_DIRECT_IND，控制器通常在主广播信道发送 CONNECT_IND；若来自扩展广播，则可能在次广播信道发送 AUX_CONNECT_REQ，并等待 AUX_CONNECT_RSP。应用通过 Bleak 观察连接结果，但不会获得这些 Link Layer PDU 的原始字节。
+
+      CONNECT_IND 会为后续数据通道通信提供 Access Address、CRCInit、连接间隔、Peripheral Latency、Supervision Timeout、Channel Map、Hop Increment 和 Sleep Clock Accuracy 等初始参数。
+    flow_image: images/connection_lifecycle.svg
+    image: images/connect_establishment_full.svg
+    header_image: images/initiating_header.svg
+    header_title: Advertising Physical Channel PDU Header（连接发起）
+    header_note: |-
+      CONNECT_IND 和 AUX_CONNECT_REQ 都是 Initiating PDU，发送在 Advertising Physical Channel 上，因此这里仍使用 Advertising Physical Channel PDU Header，而不是 Data Physical Channel PDU Header。
+      PDU Type 均为 0101。CONNECT_IND 在主广播物理信道上发送；AUX_CONNECT_REQ 在次广播物理信道或相应的周期广播上下文中发送。
+      CONNECT_IND 的 ChSel 与后续连接使用 Channel Selection Algorithm #1/#2 的选择相关；AUX_CONNECT_REQ 的 ChSel 为 RFU。TxAdd 指示 InitA 地址类型，RxAdd 指示 AdvA 地址类型。
+      该 PDU 的 LLData 分配 Connection Access Address、CRCInit、Channel Map 和时序参数。连接创建后，双方切换到 Data Physical Channel，使用 LLData 中分配的 Connection Access Address 和数据通道选择规则进行连接事件通信。
+    structure_note: |-
+      CONNECT_IND 与 AUX_CONNECT_REQ 使用相同的 34-byte Payload：InitA 6 bytes、AdvA 6 bytes、LLData 22 bytes。它们在广播物理信道上完成连接发起，并通过 LLData 告诉双方后续如何进入 Data Physical Channel。
+      Channel Map 使用 37 bits 表示后续连接可使用的数据信道；Hop Increment 占 5 bits，在 Channel Selection Algorithm #1 中用于连接事件跳频，合法范围为 5 到 16；SCA 占 3 bits，描述中心设备的睡眠时钟精度。
+
+      Bleak/WinRT 不提供本次 CONNECT_IND 的原始 Channel Map、Hop Increment、Access Address 等值，因此这里只展示协议规定格式，不显示伪造值。
+    data_title: 本次连接请求数据
+    data_note: 应用只观察到 Bleak 连接调用及结果；实际 CONNECT_IND 或 AUX_CONNECT_REQ 由 Windows 控制器在广播物理信道上生成，原始字节不可用。后续 Data Physical Channel 的 Access Address、信道和控制 PDU 同样未由 API 暴露。
+  CONNECTION_SUCCEEDED:
+    description: Bleak 已确认连接可用；协议上不存在统一的“连接成功命令”，Legacy 与 Extended 建立路径不同。
+    overview: |-
+      Legacy 路径在主广播物理信道发送 CONNECT_IND 后没有单独的响应 PDU；扩展路径在次广播物理信道交换 AUX_CONNECT_REQ 与 AUX_CONNECT_RSP。这些都属于 Advertising Physical Channel PDU。
+      发起流程完成后，双方按照 LLData 中的参数切换到 Data Physical Channel。规范上连接在创建后，还要收到对端首个 Data Physical Channel packet 才算 established。Bleak 只报告 API 层连接已可用，无法确认底层使用了哪条路径。
+
+      工具随后创建只读 WinRT 观察器，读取当前 Connection Interval、Peripheral Latency、Supervision Timeout 和 PHY。连接成功不等于应用已完成业务通信，也不代表服务发现已经作为学习步骤完成。
+    flow_image: images/connection_establishment.svg
+    image: images/connection_establishment.svg
+    structure_note: Legacy 一般是 ADV_IND/ADV_DIRECT_IND → CONNECT_IND → 首个数据通道包；Extended 一般是 ADV_EXT_IND/AUX_ADV_IND → AUX_CONNECT_REQ/AUX_CONNECT_RSP → 首个数据通道包。实际路径未由 Bleak/WinRT 暴露。
+    data_title: 连接 API 结果
+    data_note: 这是 Bleak/Windows API 状态，不是捕获到的 CONNECT_IND 响应包。
+  CONNECTION_FAILED:
+    description: 连接没有建立。不可连接广播、设备离开或超时都可能导致失败。
+    overview: 连接失败可能由设备离开范围、设备不再可连接、地址变化、Windows 蓝牙状态、配对权限或连接超时导致。错误字段显示 Bleak/Windows 返回的信息，不推断不存在的 HCI Error Code。
+    flow_image: images/connection_lifecycle.svg
+    data_title: 连接失败信息
+    data_note: Bleak 通常不提供完整 Link Layer 失败过程，页面只展示 API 返回的异常。
+  CONNECTION_PARAMETERS_OBSERVED:
+    description: Windows WinRT 读取了当前有效连接参数快照；OBSERVED 不表示此刻发生了参数更新，也不表示已经读取到 L2CAP 数据。
+    overview: |-
+      这是连接建立后的 Data Physical Channel 阶段。此时双方已经从广播物理信道切换到数据物理信道，但本事件不是一帧 L2CAP Data，而是 Windows 读取的当前连接状态参数。
+
+      Connection Interval：两次连接事件锚点之间的时间。间隔越小，设备有更多通信机会，通常响应和吞吐更高，但无线活动和功耗也会增加；间隔越大则更省电，但响应可能变慢。
+
+      Peripheral Latency：外设可以连续跳过的连接事件数量。值越大，外设越省电，但外设可能不会在每个连接事件监听或响应，实际响应延迟可能增加。Central 仍按连接规则调度连接事件。
+
+      Supervision Timeout：链路在没有收到有效数据通道 PDU 后，允许等待的最长时间。超时后 Controller 将连接判定为丢失并断开，因此它直接影响“多久没有通信会断开”。值太小容易在干扰、调度延迟或较大 Latency 下误断开；值太大则掉线检测更慢。
+
+      规范要求 Supervision Timeout 大于 2 × (1 + Peripheral Latency) × Connection Interval。工具会根据 WinRT 实际值计算并显示该约束。
+    flow_image: images/connection_parameters_observed.svg
+    image: images/data_physical_channel.svg
+    header_image: images/data_physical_header.svg
+    header_title: Data Physical Channel Header 与 LL Control 层级
+    header_note: |-
+      该事件发生在连接已经创建、双方切换到 Data Physical Channel 之后。当前值最初可能来自连接建立阶段的 CONNECT_IND/AUX_CONNECT_REQ，也可能在观察之前已被 LL 或 L2CAP 参数更新流程修改。
+      Data Physical Channel PDU 的 Data Header 先描述 LLID、NESN、SN、MD 和 Length。当 LLID = 0b11 时，Payload 是 LL Control PDU（Opcode + CtrData）；只有承载 L2CAP 的 LL Data PDU 才属于 L2CAP Data 路径。
+      WinRT 只给出读取时刻的最终有效值；读取快照本身不表示此刻发生了 update。参数更新控制 PDU 属于 Data Physical Channel 的 LL Control PDU，位于 L2CAP 数据之前；本事件本身没有对应的实际 PDU HEX。
+    structure_note: |-
+      Data Physical Channel PDU 的 Header 先描述 LLID、NESN、SN、MD 和 Length；当 LLID = 0b11 时，Payload 是 LL Control PDU，由 Opcode 和 CtrData 组成。
+      本事件不是一个 L2CAP Data PDU。参数快照本身没有对应的本次 PDU HEX。若实际发生参数更新，可能看到 LL_CONNECTION_UPDATE_IND（Opcode 0x00），或先经过 LL_CONNECTION_PARAM_REQ/RSP（0x0F/0x10）；这些都是 LL Control，不是 L2CAP Data。
+    data_title: 当前连接参数
+    data_note: Interval、Latency 和 Timeout 是 WinRT 提供的当前有效结果；本事件不是参数更新 PDU，也没有对应的 LL Control 或 L2CAP Data 原始 HEX。
+  CONNECTION_PARAMETERS_CHANGED:
+    description: Windows WinRT 报告连接参数发生变化，这些新参数将影响后续连接事件调度和掉线检测。
+    overview: |-
+      参数更新发生在 Data Physical Channel 的连接事件中。通常由 Central（旧资料常称 Master）选择并应用最终的 Connection Interval、Peripheral Latency 和 Supervision Timeout；Peripheral（旧资料常称 Slave）可以发起参数请求，但 Central 可以接受、选择其他值或拒绝。
+
+      底层可能涉及 LL_CONNECTION_PARAM_REQ、LL_CONNECTION_PARAM_RSP 和 LL_CONNECTION_UPDATE_IND；较旧控制器还可能使用 L2CAP Connection Parameter Update 流程。工具展示 WinRT 确认变化后的结果，不声称捕获到上述控制命令或拒绝响应。
+
+      工具只显示 WinRT 更新后的最终参数，不声称捕获到上述控制命令。
+    flow_image: images/connection_parameter_update.svg
+    image: images/connection_parameters_changed.svg
+    structure_note: |-
+      参数变化的底层可能路径不唯一。LL_CONNECTION_UPDATE_IND（Opcode 0x00）直接携带 WinSize、WinOffset、Interval、Latency、Timeout 和 Instant 并应用新参数。
+      支持 Connection Parameters Request procedure 时，Peripheral 可发出 LL_CONNECTION_PARAM_REQ（0x0F）；Central 不发送 LL_CONNECTION_PARAM_RSP，而是用 LL_CONNECTION_UPDATE_IND（0x00）选择并应用最终值，或用 LL_REJECT_EXT_IND 拒绝。Peripheral 可用 LL_CONNECTION_PARAM_RSP（0x10）响应 Central 发来的请求。较旧设备还可能使用 L2CAP LE Signaling 参数更新流程。
+      WinRT 只报告变化后的结果，不能确定本次实际采用哪一种 PDU 序列。
+    data_title: 更新后的连接参数
+    data_note: 参数值来自 WinRT connection_parameters_changed 事件；LL/L2CAP 请求响应字节不可用。
+  CONNECTION_PHY_OBSERVED:
+    description: Windows WinRT 报告当前连接使用的 PHY，可能是 LE 1M、LE 2M 或 LE Coded。
+    overview: LE 1M 是基础 PHY；LE 2M 提高传输速率但通常覆盖距离较短；LE Coded 通过编码提高接收灵敏度和覆盖范围，但有效吞吐更低。
+    data_title: 当前连接 PHY
+    data_note: PHY 状态来自 WinRT，不包含 LL_PHY_REQ、LL_PHY_RSP 或 LL_PHY_UPDATE_IND 原始包。
+  CONNECTION_PHY_CHANGED:
+    description: Windows WinRT 报告连接 PHY 发生变化。
+    overview: PHY 更新可能由任一设备发起，底层通常涉及 LL_PHY_REQ、LL_PHY_RSP 和 LL_PHY_UPDATE_IND。工具展示更新后的结果，不重建实际控制包。
+    data_title: 更新后的连接 PHY
+    data_note: PHY 状态来自 WinRT connection_phy_changed 事件。
+  CONNECTION_OBSERVATION_UNAVAILABLE:
+    description: BLE 连接可能仍然成功，但当前 Windows 版本、适配器或设备无法提供连接参数或 PHY 观察能力。
+    overview: Connection Parameters 和 PHY 的 WinRT API 需要 Windows 11 及相应平台支持。观察失败不会自动判定连接失败，Bleak 连接与断开仍可继续使用。
+    data_title: 观察能力状态
+    data_note: 页面展示 WinRT 返回的错误，不推断底层参数。
+  DISCONNECT_REQUESTED:
+    description: 用户要求应用主动结束当前 BLE 连接。
+    overview: |-
+      Bleak 将断开请求交给 Windows。底层通常通过 LL_TERMINATE_IND 通知对端，但 Bleak/WinRT 不提供本次控制 PDU 原始字节。
+
+      主动断开与意外掉线应分开分析：主动断开原因由应用已知；远端断开、Supervision Timeout 或无线链路问题若无 HCI Reason 则只能标记为未知来源。
+    flow_image: images/disconnection_flow.svg
+    data_title: 断开请求
+    data_note: 这是应用调用 Bleak.disconnect() 的记录，不是 LL_TERMINATE_IND 抓包。
+  DISCONNECTED:
+    description: Windows/Bleak 已确认 BLE 连接结束。
+    overview: |-
+      如果此前存在 DISCONNECT_REQUESTED，则可确认是用户主动断开。否则可能是远端主动断开、设备离开范围、Supervision Timeout、适配器重置或系统错误。
+
+      Bleak/WinRT 通常不暴露完整 HCI Disconnect Reason，因此工具不会凭空显示 0x08 Connection Timeout 等错误码。
+    flow_image: images/disconnection_flow.svg
+    data_title: 断开结果
+    data_note: 页面保留已知原因；具体 HCI/LL 原因未暴露时明确显示不可用。
+  GATT_SERVICES_DISCOVERED:
+    description: Bleak 返回了连接设备的 GATT Service、Characteristic 和 Descriptor 结构。
+    overview: |-
+      GATT 是 BLE 应用数据的组织模型：Service 用来划分功能，Characteristic 是实际读写或订阅的数据入口，Descriptor 为 Characteristic 提供附加配置和元数据，常见的 CCCD 用于开启 Notification 或 Indication。
+
+      服务发现的目的，是先建立“设备提供哪些功能、每个功能有哪些数据入口、这些入口支持什么操作”的结构视图。当前结果中的 Services: 13 和 Characteristics: 52 是 Bleak 将多轮服务发现结果整理后的数量，适合用于工程判断，但不是某一帧 ATT 响应中直接携带的两个字段。
+
+      当前工具只展示 Bleak 返回的 GATT 数据结构；系统可能在连接准备期间缓存或访问服务，但不将这些 API 结果冒充为原始 ATT 包。
+    image: images/gatt_service_discovery.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: GATT 服务发现的理论 ATT 帧结构
+    header_note: |-
+      服务发现发生在 Data Physical Channel 上。Data Channel PDU 的 Payload 可能承载 L2CAP 数据，L2CAP 又承载 ATT PDU；ATT PDU 的 Opcode 决定具体发现操作。
+      常见的理论过程是：ATT Read By Group Type Request（发现 Primary Service，UUID 0x2800）→ Read By Group Type Response；随后对每个 Service 使用 Read By Type Request（发现 Characteristic，UUID 0x2803）→ Read By Type Response。Descriptor 通常通过 Find Information Request/Response（或特定 UUID 的 Read By Type）继续发现。
+      Bleak 返回的是最终 GATT Service Collection。下面的帧图是协议理论结构，不代表本次实际捕获到这些 ATT/L2CAP 原始字节。
+    structure_note: |-
+      理论协议栈层级：Data Physical Channel PDU → LL Data PDU（LLID=10，承载 L2CAP）→ L2CAP Basic Frame（Length + CID=0x0004，ATT Channel）→ ATT PDU（Opcode + 参数）。
+      Service 发现常见 Opcode：0x10 Read By Group Type Request、0x11 Read By Group Type Response、0x08 Read By Type Request、0x09 Read By Type Response；Characteristic 发现通常在每个 Service 的句柄范围内进行，Descriptor 发现常见 Opcode 为 0x04 Find Information Request、0x05 Find Information Response。
+      由于服务发现通常需要多轮请求和响应，Services: 13 与 Characteristics: 52 是多轮结果的汇总，不应反向伪造为一帧 HEX。
+    data_title: GATT 结构
+    data_note: UUID、Handle、Properties 和 Descriptor 来自 Bleak GATT Service Collection。
+  GATT_READ_REQUESTED:
+    description: 应用请求读取指定 Characteristic 的当前值。
+    overview: |-
+      Read 用于由 Central 主动向 Peripheral 请求 Characteristic Value。应用选择一个支持 Read 属性的 Characteristic，Bleak 将请求交给 Windows BLE 协议栈；Peripheral 返回当前值，或返回 ATT 错误响应。
+
+      读取适合获取设备状态、配置或一次性数据。它与 Notification 不同：Read 必须由应用发起，响应完成后本次事务结束；设备不会因为一次 Read 自动持续推送后续变化。
+
+      当前事件表示应用已经发起读取请求，不表示 Peripheral 已经返回成功值。成功值会在 GATT_READ_COMPLETED 中展示，失败原因也应以 API 返回结果为准。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: GATT Read 的理论 ATT 帧结构
+    header_note: |-
+      理论协议栈层级为 Data Physical Channel PDU → LL Data PDU → L2CAP Basic Frame（CID = 0x0004）→ ATT PDU。
+      常见的短值读取使用 ATT Read Request（Opcode 0x0A，携带 Attribute Handle），Peripheral 返回 Read Response（Opcode 0x0B，携带 Value）。如果值超过单个响应允许的长度，可能继续使用 Read Blob Request/Response（0x0C/0x0D）分段读取。
+      Windows/Bleak 通常只暴露 Characteristic UUID、请求结果和 Value，不提供本次 ATT Opcode、Handle、L2CAP Header 或 LL Data Header 原始字节。
+    structure_note: |-
+      Read Request 的理论结构：Opcode 0x0A | Attribute Handle（2 bytes，小端序）。
+      Read Response 的理论结构：Opcode 0x0B | Attribute Value（长度取决于协议和设备）。错误时可能返回 Error Response（Opcode 0x01），其中包含请求 Opcode、Attribute Handle 和 Error Code。
+      若一次响应无法覆盖完整值，后续理论过程为 Read Blob Request（0x0C，Handle + Value Offset）→ Read Blob Response（0x0D，Value）。这些是协议示例，不是本次事件捕获到的原始帧。
+    data_title: Read 请求目标
+    data_note: 目标 UUID 和操作状态来自应用/Bleak；原始 ATT Read Request、Attribute Handle 和发送 HEX 未由 API 暴露。
+  GATT_READ_COMPLETED:
+    description: Bleak 返回了 Characteristic Read 的结果或错误。
+    overview: |-
+      这是一次 Read 操作的 API 层完成事件。成功时，Windows/Bleak 已经收到 Peripheral 返回的 Characteristic Value；失败时，系统会返回异常或错误信息。页面保留 UUID、Value 和结果状态，便于继续按 UTF-8、整数、位域或设备业务协议解析。
+
+      在协议层，成功路径通常是 ATT Read Request（0x0A）→ Read Response（0x0B）；长值可能经过多轮 Read Blob Request/Response（0x0C/0x0D）。ATT 错误则通常通过 Error Response（0x01）返回。
+
+      Read 完成只代表这次请求有结果，不代表设备以后会主动推送变化。需要持续接收变化时，应检查 Characteristic Properties，并使用 CCCD 订阅 Notification 或 Indication。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: GATT Read Response 的理论 ATT 帧结构
+    header_note: |-
+      理论路径仍是 Data Physical Channel PDU → LL Data PDU → L2CAP CID 0x0004 → ATT PDU。成功的短值读取通常返回 Read Response（Opcode 0x0B）；长值可能返回多个 Read Blob Response（Opcode 0x0D）。
+      页面中的 Value HEX 是 ATT Attribute Value 的内容部分。它不包含 ATT Opcode、Attribute Handle、L2CAP Length/CID、LL Header、MIC 或 CRC；这些底层字段未由 Bleak API 提供。
+    structure_note: |-
+      理论 Read Response：Opcode 0x0B | Value。
+      理论 Error Response：Opcode 0x01 | Request Opcode In Error | Attribute Handle In Error | Error Code。错误码需要结合设备和 ATT 规范解释，不能把任意 API 异常直接转换成某个错误码。
+      因此可以依据 UUID、Properties 和 Value 继续推导业务数据，但不能仅凭 Value HEX 还原本次完整 ATT/L2CAP 原始帧。
+    data_title: Read 返回值
+    data_note: Value HEX 是 Bleak 实际返回的 Characteristic Value；ATT Opcode、Handle、L2CAP 和 LL 原始字段不可见。
+  GATT_WRITE_REQUESTED:
+    description: 应用请求向指定 Characteristic 写入一段 HEX 数据。
+    overview: |-
+      Write 用于由 Central 向 Peripheral 提交 Characteristic Value。应用输入 HEX 后，Bleak 将字节交给 Windows BLE 协议栈；设备是否接受、如何解释这些字节，取决于 Characteristic 的业务协议和设备实现。
+
+      有响应写入（Write With Response）适合需要确认结果的配置或命令；无响应写入（Write Without Response）不等待 ATT Write Response，通常延迟更低，但应用不能从这次调用确认 Peripheral 已处理数据。具体模式必须与 Characteristic Properties 和 `response` 参数一致。
+
+      当前事件只表示应用提交了写入请求，不表示设备已经接受。完成状态会在 GATT_WRITE_COMPLETED 中展示。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: GATT Write 的理论 ATT 帧结构
+    header_note: |-
+      理论协议栈层级为 Data Physical Channel PDU → LL Data PDU → L2CAP Basic Frame（CID = 0x0004）→ ATT PDU。
+      Write With Response 使用 ATT Write Request（Opcode 0x12，Handle + Value），Peripheral 通常返回 Write Response（Opcode 0x13）。Write Without Response 使用 Write Command（Opcode 0x52，Handle + Value），协议上不返回 ATT Write Response。
+      Windows/Bleak 只暴露应用提交的 Value 和 API 结果，不提供本次 ATT Opcode、Attribute Handle 或完整 L2CAP/LL 原始字节。
+    structure_note: |-
+      理论 Write Request：Opcode 0x12 | Attribute Handle（2 bytes，小端序）| Value。
+      理论 Write Response：Opcode 0x13，无参数。理论 Write Command：Opcode 0x52 | Attribute Handle（2 bytes）| Value，不要求 ATT 响应。
+      设备拒绝有响应写入时，可能返回 Error Response（Opcode 0x01）；无响应写入不会通过 ATT 返回对应确认。这里展示的是协议格式，不是实际捕获帧。
+    data_title: Write Characteristic Value
+    data_note: 下方 HEX 是应用实际提交的 Characteristic Value，不包含 ATT Opcode、Handle、L2CAP Header 或 LL Header。
+  GATT_WRITE_COMPLETED:
+    description: Bleak 报告 Characteristic 写入已完成或失败。
+    overview: |-
+      这是 Write 操作的 API 层结果。对于 Write With Response，成功通常意味着协议栈收到了 Peripheral 对 Write Request 的 ATT Write Response；失败可能来自权限不足、无效 Handle、值长度不符合要求、设备拒绝或连接已断开。
+
+      对于 Write Without Response，调用完成主要表示 Windows 已接受或提交了发送请求，并不等于 Peripheral 已返回确认，更不等于业务层已经执行成功。分析时必须结合本次写入模式和后续 Notification/Read 结果。
+
+      页面展示应用提交的 Value 和 Bleak 返回的状态，不把 API 成功翻译成虚构的 ATT HEX。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: GATT Write 完成的理论 ATT 交互
+    header_note: |-
+      Write With Response 的理论路径为 Write Request（ATT Opcode 0x12）→ Write Response（0x13）；Write Without Response 的理论路径为 Write Command（0x52），没有对应的 ATT Response。
+      这两种 ATT PDU 都位于 L2CAP 固定 CID 0x0004 之上，再由 LL Data PDU 承载。Bleak 的完成事件不包含完整的 ATT、L2CAP 或 LL 原始字节。
+    structure_note: |-
+      成功有响应写入可推导为：0x12 | Handle | Value → 0x13。
+      成功无响应写入可推导为：0x52 | Handle | Value；这里没有 0x13 响应。失败有响应写入可能推导为 0x01 Error Response，但具体 Error Code 必须来自真实抓包或可靠 API 信息。
+      因此“写入完成”是 API 语义事件，理论结构用于学习协议层次，不代表本次实际看到了这些 PDU。
+    data_title: Write 结果与 Value
+    data_note: 写入 HEX 是应用实际提交的 Value；底层 Opcode、Handle、响应 PDU 和设备业务处理结果未由 API 完整暴露。
+  GATT_NOTIFY_ENABLED:
+    description: 应用已请求订阅或取消订阅 Characteristic 的通知。
+    overview: |-
+      应用启用订阅后，Peripheral 可以在后续连接事件中主动发送 Characteristic Value。Notification 不要求 ATT 层确认，Indication 则要求 Central 返回确认；两者都需要由 Characteristic Properties 和设备行为支持。
+
+      在常见实现中，订阅会让系统配置该 Characteristic 的 Client Characteristic Configuration Descriptor（CCCD，通常 UUID 0x2902）。选择 Notification 或 Indication 的具体 CCCD 值由协议栈和 Bleak 根据 API 请求完成，应用不直接构造完整 ATT PDU。
+
+      当前事件表示订阅请求已被 Bleak/API 接受或完成。它不表示 Peripheral 已经发送过通知；实际 Value 会在 GATT_NOTIFICATION_RECEIVED 中单独记录。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: 启用 Notification 的理论 ATT 交互
+    header_note: |-
+      理论路径为 Data Physical Channel PDU → LL Data PDU → L2CAP CID 0x0004 → ATT Write Request/Command。系统通常向 CCCD（UUID 0x2902）的 Attribute Handle 写入配置值：0x0001 表示 Notification，0x0002 表示 Indication，0x0000 表示关闭。
+      使用 Write With Response 配置时常见为 ATT Write Request（0x12）→ Write Response（0x13）；具体是否采用有响应过程由系统协议栈实现。Bleak 不提供 CCCD Handle 和本次写入原始字节。
+    structure_note: |-
+      CCCD 配置是理论上的 Descriptor 写入：0x12 或 0x52 | CCCD Attribute Handle | 01 00（Notification）或 02 00（Indication）。
+      启用后，Peripheral 可能发送 Handle Value Notification（0x1B）或 Handle Value Indication（0x1D）。Indication 还需要 Central 返回 Handle Value Confirmation（0x1E）。这些 Opcode 和配置值用于协议推导，不是本次捕获的原始帧。
+    data_title: Notification 订阅状态
+    data_note: 这是 Bleak 订阅状态结果，不是 CCCD Write PDU 抓包；CCCD Handle、配置写入 Opcode 和原始 Value 未由 API 暴露。
+  GATT_NOTIFY_DISABLED:
+    description: 应用已取消指定 Characteristic 的通知订阅。
+    overview: |-
+      应用取消订阅后，Peripheral 通常不应继续向该 Central 推送对应的 Notification 或 Indication。系统会移除回调并将 CCCD 配置恢复为关闭状态，常见理论值为 0x0000。
+
+      取消订阅只影响后续推送，不会撤销已经发送到链路上的数据，也不等于断开 BLE 连接。若设备仍然发送数据，可能是设备实现、缓存中的事件或订阅状态更新时序造成的，需要结合后续事件判断。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: 禁用 Notification 的理论 ATT 交互
+    header_note: |-
+      理论上系统会向 CCCD（UUID 0x2902）的 Attribute Handle 写入 00 00，通常通过 ATT Write Request（0x12）并等待 Write Response（0x13），也可能由系统使用其他符合设备属性的流程完成。
+      CCCD Handle、配置写入 PDU 和取消订阅后的链路行为未由 Bleak API 以原始字节形式提供。该事件只表示 API 层的订阅状态变化。
+    structure_note: |-
+      理论 CCCD 关闭配置：Write Request/Command Opcode 0x12 或 0x52 | CCCD Handle | 00 00。
+      关闭后不应再有新的 Handle Value Notification（0x1B）或 Handle Value Indication（0x1D）；Indication 若已发出，仍可能需要先完成确认（0x1E）。这是时序和协议推导，不是实际捕获帧。
+    data_title: Notification 订阅状态
+    data_note: 这是 Bleak 取消订阅的 API 结果，不是 CCCD Write PDU 抓包，也不包含原始 Handle 或配置 HEX。
+  GATT_NOTIFICATION_RECEIVED:
+    description: Bleak 收到了 Peripheral 推送的 Notification 或 Indication Value。
+    overview: |-
+      这是 Peripheral 向 Central 主动推送 Characteristic Value 后，由 Bleak 回调交给应用的事件。Notification 适合实时状态、传感器采样或数据流；Indication 适合必须确认接收的关键状态，两者都不等同于应用主动 Read。
+
+      真实业务解析应结合 Characteristic UUID、服务定义、Properties、端序、长度和设备协议判断。相同的 HEX 在不同 Characteristic 中可能代表完全不同的字段；不能仅凭 Notification 这个事件名推断业务含义。
+
+      当前事件的 Value HEX 是 Windows/Bleak 实际交付给应用的字节。API 通常不能让工具确认它是 Notification 还是 Indication，也不提供底层确认过程，因此页面会保留这种不确定性。
+    image: images/data_physical_channel.svg
+    header_image: images/gatt_service_discovery.svg
+    header_title: Notification/Indication 的理论 ATT 帧结构
+    header_note: |-
+      理论协议栈层级为 Data Physical Channel PDU → LL Data PDU → L2CAP Basic Frame（CID = 0x0004）→ ATT Handle Value PDU。
+      Handle Value Notification 使用 ATT Opcode 0x1B，携带 Attribute Handle 和 Value；Handle Value Indication 使用 Opcode 0x1D，携带相同结构，并要求 Central 返回 Handle Value Confirmation（0x1E）。
+      Windows/Bleak 回调通常只交付 Characteristic 对象和 Value，不提供 ATT Opcode、Attribute Handle、确认 PDU 或完整 L2CAP/LL 原始字节。
+    structure_note: |-
+      理论 Notification：Opcode 0x1B | Attribute Handle（2 bytes，小端序）| Value。
+      理论 Indication：Opcode 0x1D | Attribute Handle（2 bytes）| Value → Central Confirmation：Opcode 0x1E，无参数。
+      页面中的 Value HEX 不包含 Opcode、Handle、L2CAP Length/CID、LL Header、MIC 或 CRC。由于 API 可能同时映射两种推送，无法仅凭这个事件还原具体 PDU 类型。
+    data_title: Notification / Indication Value
+    data_note: HEX 是 Bleak 实际收到的 Characteristic Value，不是完整 ATT Handle Value Notification 或 Indication PDU；Opcode、Handle 和确认过程未由 API 暴露。
+
+ad_types:
+  "0x01": Flags
+  "0x03": Complete 16-bit Service UUIDs
+  "0x07": Complete 128-bit Service UUIDs
+  "0x08": Shortened Local Name
+  "0x09": Complete Local Name
+  "0x0A": TX Power Level
+  "0x16": Service Data
+  "0x21": Service Data - 128-bit UUID
+  "0xFF": Manufacturer Specific Data
+
+ad_type_descriptions:
+  "0x01": 指示设备的 LE 可发现模式、是否支持 BR/EDR，以及 LE 与 BR/EDR 同时工作的能力。该字段通常出现在广播数据中。
+  "0x03": 完整列出设备公开的 16-bit Service UUID。UUID 字节按小端序编码，例如 09 18 表示 0x1809。
+  "0x07": 完整列出设备公开的 128-bit Service UUID。每个 UUID 在 Advertising Data 中按 Bluetooth UUID 字节序编码。
+  "0x08": 缩短的本地设备名称。广播空间不足时使用，完整名称可能出现在后续 SCAN_RSP 中。
+  "0x09": 完整的本地设备名称。常见于 SCAN_RSP，也可以直接放在广播数据中；出现位置取决于设备实现。
+  "0x0A": 广播设备发射当前数据时使用的参考发射功率，单位 dBm，可配合 RSSI 估算距离，但不能保证精确。
+  "0x16": 由一个 16-bit Service UUID 加该服务自定义数据组成。前两个数据字节是小端序 UUID，后续字节由服务定义。
+  "0x21": 由一个 128-bit Service UUID 加该服务自定义数据组成。UUID 后续字节的含义由对应服务定义。
+  "0xFF": 厂商自定义数据。前两个数据字节是 Bluetooth SIG 分配的 Company Identifier（小端序），其余格式由厂商定义。

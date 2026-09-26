@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330">
+  <rect width="760" height="330" fill="#ffffff"/>
+  <g font-family="Segoe UI, sans-serif" fill="#173f3b">
+    <rect x="65" y="18" width="190" height="45" rx="4" fill="#e7f2ef" stroke="#176f65" stroke-width="2"/>
+    <rect x="505" y="18" width="190" height="45" rx="4" fill="#e7f2ef" stroke="#176f65" stroke-width="2"/>
+    <text x="119" y="46" font-size="17" font-weight="600">Central</text>
+    <text x="555" y="46" font-size="17" font-weight="600">Peripheral</text>
+    <line x1="160" y1="63" x2="160" y2="312" stroke="#4f7980" stroke-width="2"/>
+    <line x1="600" y1="63" x2="600" y2="312" stroke="#4f7980" stroke-width="2"/>
+    <line x1="160" y1="105" x2="585" y2="105" stroke="#176f65" stroke-width="2"/>
+    <polygon points="585,99 600,105 585,111" fill="#176f65"/>
+    <text x="315" y="92" font-size="16">CONNECT_IND</text>
+    <text x="618" y="111" font-size="13">建立连接参数</text>
+    <line x1="160" y1="185" x2="585" y2="185" stroke="#9a6a08" stroke-width="2" stroke-dasharray="7 5"/>
+    <polygon points="585,179 600,185 585,191" fill="#9a6a08"/>
+    <text x="276" y="172" font-size="16">Connection Parameter Update</text>
+    <text x="618" y="191" font-size="13">参数可能更新</text>
+    <line x1="160" y1="270" x2="585" y2="270" stroke="#9a4b42" stroke-width="2"/>
+    <polygon points="585,264 600,270 585,276" fill="#9a4b42"/>
+    <text x="308" y="257" font-size="16">LL_TERMINATE_IND</text>
+    <text x="618" y="276" font-size="13">连接结束</text>
+  </g>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <rect width="760" height="360" fill="#ffffff"/>
+  <g font-family="Segoe UI, sans-serif" fill="#173f3b">
+    <rect x="70" y="18" width="190" height="46" rx="4" fill="#e7f2ef" stroke="#176f65" stroke-width="2"/>
+    <rect x="500" y="18" width="190" height="46" rx="4" fill="#e7f2ef" stroke="#176f65" stroke-width="2"/>
+    <text x="124" y="47" font-size="17" font-weight="600">Advertiser</text>
+    <text x="565" y="47" font-size="17" font-weight="600">Scanner</text>
+    <line x1="165" y1="64" x2="165" y2="335" stroke="#4f7980" stroke-width="2"/>
+    <line x1="595" y1="64" x2="595" y2="335" stroke="#4f7980" stroke-width="2"/>
+    <line x1="165" y1="120" x2="580" y2="120" stroke="#176f65" stroke-width="2"/>
+    <polygon points="580,114 595,120 580,126" fill="#176f65"/>
+    <text x="335" y="107" font-size="16">ADV_IND</text>
+    <text x="610" y="126" font-size="13">可连接、可扫描</text>
+    <line x1="580" y1="205" x2="180" y2="205" stroke="#9a6a08" stroke-width="2"/>
+    <polygon points="180,199 165,205 180,211" fill="#9a6a08"/>
+    <text x="334" y="192" font-size="16">SCAN_REQ</text>
+    <text x="20" y="211" font-size="13">请求补充数据</text>
+    <line x1="165" y1="285" x2="580" y2="285" stroke="#176f65" stroke-width="2"/>
+    <polygon points="580,279 595,285 580,291" fill="#176f65"/>
+    <text x="334" y="272" font-size="16">SCAN_RSP</text>
+    <text x="610" y="291" font-size="13">返回附加数据</text>
+  </g>
+</svg>

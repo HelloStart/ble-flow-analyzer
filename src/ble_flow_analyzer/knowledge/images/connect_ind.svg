@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="300" viewBox="0 0 940 300">
+  <rect width="940" height="300" fill="#ffffff"/>
+  <text x="18" y="28" font-family="Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#173f3b">CONNECT_IND Payload</text>
+  <g font-family="Segoe UI, sans-serif" font-size="14" fill="#17232b" stroke="#52636a" stroke-width="1.2">
+    <rect x="18" y="48" width="145" height="58" fill="#63c4dd"/><rect x="163" y="48" width="145" height="58" fill="#a9c6df"/><rect x="308" y="48" width="614" height="58" fill="#d8e9e4" stroke="#176f65" stroke-width="2"/>
+    <text x="36" y="74" stroke="none">InitA</text><text x="36" y="96" stroke="none">6 bytes</text><text x="181" y="74" stroke="none">AdvA</text><text x="181" y="96" stroke="none">6 bytes</text><text x="326" y="82" stroke="none" font-weight="600">LLData · 22 bytes</text>
+    <rect x="18" y="145" width="125" height="62" fill="#f4d65e"/><rect x="143" y="145" width="105" height="62" fill="#efbc3c"/><rect x="248" y="145" width="85" height="62" fill="#63c4dd"/><rect x="333" y="145" width="95" height="62" fill="#a9c6df"/><rect x="428" y="145" width="95" height="62" fill="#d8e9e4"/><rect x="523" y="145" width="85" height="62" fill="#f4d65e"/><rect x="608" y="145" width="95" height="62" fill="#efbc3c"/><rect x="703" y="145" width="130" height="62" fill="#63c4dd"/><rect x="833" y="145" width="89" height="62" fill="#a9c6df"/>
+    <text x="28" y="171" stroke="none">Access Address</text><text x="58" y="195" stroke="none">4</text><text x="165" y="171" stroke="none">CRCInit</text><text x="186" y="195" stroke="none">3</text><text x="262" y="171" stroke="none">WinSize</text><text x="284" y="195" stroke="none">1</text><text x="344" y="171" stroke="none">WinOffset</text><text x="374" y="195" stroke="none">2</text><text x="443" y="171" stroke="none">Interval</text><text x="468" y="195" stroke="none">2</text><text x="536" y="171" stroke="none">Latency</text><text x="558" y="195" stroke="none">2</text><text x="619" y="171" stroke="none">Timeout</text><text x="647" y="195" stroke="none">2</text><text x="718" y="171" stroke="none">Channel Map</text><text x="764" y="195" stroke="none">5</text><text x="845" y="171" stroke="none">Hop/SCA</text><text x="873" y="195" stroke="none">1</text>
+  </g>
+  <g font-family="Segoe UI, sans-serif" font-size="13" fill="#52636a">
+    <text x="18" y="242">Channel Map: 37 data-channel bits · 1 means the channel can be used.</text>
+    <text x="18" y="266">Hop/SCA: Hop Increment bits 0-4 (valid 5-16) | Sleep Clock Accuracy bits 5-7.</text>
+  </g>
+</svg>

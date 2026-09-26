@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="380" viewBox="0 0 860 380">
+  <rect width="860" height="380" fill="#fff"/>
+  <g font-family="Segoe UI, sans-serif" fill="#173f3b">
+    <text x="18" y="28" font-size="18" font-weight="600">Advertising Physical Channel initiation → Data Physical Channel connection</text>
+    <rect x="30" y="55" width="370" height="205" fill="#edf4f2" stroke="#176f65"/>
+    <text x="50" y="82" font-size="16" font-weight="600">Legacy advertising path</text><text x="50" y="112" font-size="14">ADV_IND / ADV_DIRECT_IND</text><text x="50" y="144" font-size="18">↓</text><text x="50" y="174" font-size="15">CONNECT_IND on primary advertising channel</text><text x="50" y="206" font-size="18">↓</text><text x="50" y="236" font-size="15">No separate response PDU</text>
+    <rect x="460" y="55" width="370" height="205" fill="#f8f4e8" stroke="#9a6a08"/>
+    <text x="480" y="82" font-size="16" font-weight="600">Extended advertising path</text><text x="480" y="112" font-size="14">ADV_EXT_IND → AUX_ADV_IND</text><text x="480" y="144" font-size="18">↓</text><text x="480" y="174" font-size="15">AUX_CONNECT_REQ → AUX_CONNECT_RSP</text><text x="480" y="206" font-size="18">↓</text><text x="480" y="236" font-size="15">On secondary advertising channel</text>
+    <line x1="215" y1="260" x2="365" y2="292" stroke="#52636a" stroke-width="2"/><line x1="645" y1="260" x2="495" y2="292" stroke="#52636a" stroke-width="2"/>
+    <rect x="225" y="292" width="410" height="44" fill="#e8eef4" stroke="#4f7980" stroke-width="2"/>
+    <text x="258" y="319" font-size="15" font-weight="600">Switch to Data Physical Channel connection events</text>
+    <text x="30" y="360" font-size="13" fill="#52636a">Established after receiving a peer Data Physical Channel packet; Bleak does not reveal the exact Link Layer path.</text>
+  </g>
+</svg>

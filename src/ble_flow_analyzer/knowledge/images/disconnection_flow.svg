@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="245" viewBox="0 0 760 245">
+  <rect width="760" height="245" fill="#ffffff"/>
+  <g font-family="Segoe UI, sans-serif" fill="#173f3b">
+    <text x="18" y="28" font-size="18" font-weight="600">Disconnection paths</text>
+    <rect x="50" y="60" width="190" height="54" fill="#e7f2ef" stroke="#176f65"/><rect x="285" y="60" width="190" height="54" fill="#f8eed9" stroke="#9a6a08"/><rect x="520" y="60" width="190" height="54" fill="#f4e5e3" stroke="#9a4b42"/>
+    <text x="84" y="83" font-size="15">User disconnect</text><text x="82" y="104" font-size="13">原因已知</text>
+    <text x="320" y="83" font-size="15">Remote disconnect</text><text x="320" y="104" font-size="13">API 原因可能缺失</text>
+    <text x="555" y="83" font-size="15">Supervision timeout</text><text x="560" y="104" font-size="13">链路失联判定</text>
+    <line x1="145" y1="114" x2="350" y2="174" stroke="#52636a"/><line x1="380" y1="114" x2="380" y2="174" stroke="#52636a"/><line x1="615" y1="114" x2="410" y2="174" stroke="#52636a"/>
+    <rect x="270" y="174" width="220" height="48" fill="#edf1f3" stroke="#52636a"/>
+    <text x="327" y="204" font-size="16">DISCONNECTED</text>
+  </g>
+</svg>

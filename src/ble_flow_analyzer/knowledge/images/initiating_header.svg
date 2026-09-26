@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="220" viewBox="0 0 900 220">
+  <rect width="900" height="220" fill="#fff"/>
+  <g font-family="Segoe UI, sans-serif" fill="#17232b" stroke="#52636a">
+    <text x="18" y="28" stroke="none" font-size="18" font-weight="600" fill="#173f3b">Advertising Physical Channel PDU Header · Initiating PDU · 16 bits</text>
+    <rect x="18" y="48" width="220" height="64" fill="#63c4dd"/><rect x="238" y="48" width="95" height="64" fill="#d8e9e4"/><rect x="333" y="48" width="80" height="64" fill="#efbc3c"/><rect x="413" y="48" width="80" height="64" fill="#f4d65e"/><rect x="493" y="48" width="300" height="64" fill="#a9c6df"/><rect x="793" y="48" width="89" height="64" fill="#d8e9e4"/>
+    <text x="36" y="73" stroke="none">PDU Type = 0101</text><text x="36" y="98" stroke="none">CONNECT_IND / AUX_CONNECT_REQ</text><text x="261" y="82" stroke="none">ChSel/RFU</text><text x="350" y="82" stroke="none">TxAdd</text><text x="430" y="82" stroke="none">RxAdd</text><text x="610" y="73" stroke="none">Length</text><text x="598" y="98" stroke="none">Payload bytes</text><text x="810" y="82" stroke="none">RFU</text>
+  </g>
+  <g font-family="Segoe UI, sans-serif" font-size="13" fill="#52636a">
+    <text x="18" y="145">CONNECT_IND: primary advertising physical channel. AUX_CONNECT_REQ: secondary advertising physical channel/context.</text>
+    <text x="18" y="169">TxAdd describes InitA address type; RxAdd describes AdvA address type.</text>
+    <text x="18" y="197" fill="#176f65" font-weight="600">After initiation: switch to Data Physical Channel using Connection Access Address and LLData parameters.</text>
+  </g>
+</svg>
