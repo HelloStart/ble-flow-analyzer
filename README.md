@@ -4,7 +4,9 @@
 
 当前版本仅支持 Windows 10 及更高版本。使用真实 BLE 扫描或连接功能前，请确认 Windows 蓝牙已经打开，并且系统已识别蓝牙适配器。
 
-![BLE Flow Analyzer 操作演示](https://github.com/HelloStart/ble-flow-analyzer/raw/refs/heads/main/demo.gif)
+示图(demo.gif)如下：
+
+![BLE Flow Analyzer 操作演示](./demo.gif)
 
 
 面向 BLE 工程师学习协议的桌面流程分析工具。第一阶段已支持 Windows WinRT 真实扫描，并保留演示数据用于学习标准流程。不需要额外的 BLE 抓包硬件或抓包工具。
